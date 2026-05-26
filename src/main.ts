@@ -11,15 +11,27 @@ async function bootstrap() {
   // Allow flexible CORS configuration:
   // - If CORS_ORIGIN='*' we enable a permissive origin handler (useful for debug).
   // - Otherwise split a comma-separated list of allowed origins.
-  const origin = originEnv === '*' ? true : originEnv.split(',').map((item) => item.trim());
+  const allowedOrigins = originEnv === '*' ? null : originEnv.split(',').map((item) => item.trim());
 
   console.log('CORS origin configured:', originEnv);
 
   app.enableCors({
-    origin,
+    origin: (requestOrigin, callback) => {
+      if (!requestOrigin) {
+        return callback(null, true);
+      }
+      if (originEnv === '*') {
+        return callback(null, true);
+      }
+      if (allowedOrigins.includes(requestOrigin)) {
+        return callback(null, true);
+      }
+      console.warn('CORS request rejected:', requestOrigin);
+      return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: '*',
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   });
 
   const port = Number(process.env.PORT || 3333);
