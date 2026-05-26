@@ -1,0 +1,24 @@
+[31m[Nest] 18376  - [39m26/05/2026, 16:12:54 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39mReferenceError: status is not defined
+    at TelemetryController.vehicles [90m(E:\Norte\telemetria\telemetria_api\[39mdist\telemetry.controller.js:27:50[90m)[39m
+    at [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:38:29
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at async [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:46:28
+    at async [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-proxy.js:9:17
+[31m[Nest] 18376  - [39m26/05/2026, 16:12:54 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39mReferenceError: status is not defined
+    at TelemetryController.vehicles [90m(E:\Norte\telemetria\telemetria_api\[39mdist\telemetry.controller.js:27:50[90m)[39m
+    at [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:38:29
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at async [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:46:28
+    at async [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-proxy.js:9:17
+[31m[Nest] 18376  - [39m26/05/2026, 16:13:20 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39mReferenceError: status is not defined
+    at TelemetryController.vehicles [90m(E:\Norte\telemetria\telemetria_api\[39mdist\telemetry.controller.js:27:50[90m)[39m
+    at [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:38:29
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at async [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:46:28
+    at async [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-proxy.js:9:17
+[31m[Nest] 18376  - [39m26/05/2026, 16:13:54 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39mReferenceError: status is not defined
+    at TelemetryController.vehicles [90m(E:\Norte\telemetria\telemetria_api\[39mdist\telemetry.controller.js:27:50[90m)[39m
+    at [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:38:29
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at async [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-execution-context.js:46:28
+    at async [90mE:\Norte\telemetria\telemetria_api\[39mnode_modules\[4m@nestjs[24m\core\router\router-proxy.js:9:17

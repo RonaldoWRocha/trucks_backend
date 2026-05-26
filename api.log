@@ -1,0 +1,75 @@
+
+> telemetria-api@0.1.0 start:dev
+> nest start --watch
+
+[2J[3J[H[[90m16:12:26[0m] Starting compilation in watch mode...
+
+[[90m16:12:27[0m] Found 0 errors. Watching for file changes.
+
+[dotenv@17.2.3] injecting env (11) from ..\telemetria_dados\.env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[dotenv@17.2.3] injecting env (0) from ..\telemetria_dados\.env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +29ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mHealthController {/health}:[39m[38;5;3m +3ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/health, GET} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTelemetryController {/api}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/dashboard, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate/timeline, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate/positions, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/summary, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integration, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 15432  - [39m26/05/2026, 16:12:28 [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +2ms[39m
+Telemetria API em http://127.0.0.1:3333
+[2J[3J[H[[90m16:13:34[0m] File change detected. Starting incremental compilation...
+
+[[90m16:13:34[0m] Found 0 errors. Watching for file changes.
+
+[dotenv@17.2.3] injecting env (11) from ..\telemetria_dados\.env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[dotenv@17.2.3] injecting env (0) from ..\telemetria_dados\.env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +9ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mHealthController {/health}:[39m[38;5;3m +3ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/health, GET} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTelemetryController {/api}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/dashboard, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate, GET} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate/timeline, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate/positions, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/summary, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integration, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 20520  - [39m26/05/2026, 16:13:35 [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +2ms[39m
+[2J[3J[H[[90m16:35:59[0m] File change detected. Starting incremental compilation...
+
+[[90m16:35:59[0m] Found 0 errors. Watching for file changes.
+
+[2J[3J[H[[90m16:36:00[0m] File change detected. Starting incremental compilation...
+
+[[90m16:36:01[0m] Found 0 errors. Watching for file changes.
+
+[2J[3J[H[[90m16:36:01[0m] File change detected. Starting incremental compilation...
+
+[[90m16:36:02[0m] Found 0 errors. Watching for file changes.
+
+[dotenv@17.2.3] injecting env (11) from ..\telemetria_dados\.env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[2J[3J[H[[90m16:36:04[0m] File change detected. Starting incremental compilation...
+
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[dotenv@17.2.3] injecting env (0) from ..\telemetria_dados\.env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +20ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mHealthController {/health}:[39m[38;5;3m +9ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/health, GET} route[39m[38;5;3m +5ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTelemetryController {/api}:[39m[38;5;3m +2ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/dashboard, GET} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles, GET} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate, GET} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate/timeline, GET} route[39m[38;5;3m +8ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate/positions, GET} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts, GET} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/summary, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integration, GET} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 12204  - [39m26/05/2026, 16:36:04 [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +5ms[39m
