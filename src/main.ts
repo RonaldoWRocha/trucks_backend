@@ -15,8 +15,9 @@ async function bootstrap() {
   });
 
   const port = Number(process.env.PORT || 3333);
-  await app.listen(port, '127.0.0.1');
-  console.log(`Telemetria API em http://127.0.0.1:${port}`);
+  // Escutar em 0.0.0.0 permite conexões externas (ex.: quando rodando em Docker/EasyPanel)
+  await app.listen(port, '0.0.0.0');
+  console.log(`Telemetria API em http://0.0.0.0:${port}`);
 }
 
 bootstrap();
