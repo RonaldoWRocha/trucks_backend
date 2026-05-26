@@ -6,12 +6,20 @@ async function bootstrap() {
   loadEnvironment();
 
   const app = await NestFactory.create(AppModule);
-  const origin =
-    process.env.CORS_ORIGIN || 'http://127.0.0.1:3000,http://localhost:3000';
+  const originEnv = process.env.CORS_ORIGIN || 'http://127.0.0.1:3000,http://localhost:3000';
+
+  // Allow flexible CORS configuration:
+  // - If CORS_ORIGIN='*' we enable a permissive origin handler (useful for debug).
+  // - Otherwise split a comma-separated list of allowed origins.
+  const origin = originEnv === '*' ? true : originEnv.split(',').map((item) => item.trim());
+
+  console.log('CORS origin configured:', originEnv);
 
   app.enableCors({
-    origin: origin.split(',').map((item) => item.trim()),
+    origin,
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: '*',
   });
 
   const port = Number(process.env.PORT || 3333);
