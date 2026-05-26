@@ -94,8 +94,7 @@ export class TelemetryService {
           coalesce(extract(epoch from lr.total_motor_lig_par) / 3600, 0) as idle_h,
           case
             when lm.data_hora is null then 'sem-comm'
-            when lm.data_hora < now() - interval '120 minutes' then 'sem-comm'
-            when lm.data_hora < now() - interval '10 minutes' then 'atrasado'
+            when lm.data_hora < now() - interval '10 minutes' then 'sem-comm'
             else 'online'
           end as status
         from trucks.veiculos v
