@@ -11,7 +11,7 @@ async function bootstrap() {
   // Allow flexible CORS configuration:
   // - If CORS_ORIGIN='*' we enable a permissive origin handler (useful for debug).
   // - Otherwise split a comma-separated list of allowed origins.
-  const allowedOrigins = originEnv === '*' ? [] : originEnv.split(',').map((item) => item.trim());
+  const allowedOrigins: string[] | null = originEnv === '*' ? null : originEnv.split(',').map((item) => item.trim());
 
   console.log('CORS origin configured:', originEnv);
 
@@ -20,7 +20,7 @@ async function bootstrap() {
       if (!requestOrigin) {
         return callback(null, true);
       }
-      if (originEnv === '*') {
+      if (allowedOrigins === null) {
         return callback(null, true);
       }
       if (allowedOrigins.includes(requestOrigin)) {
