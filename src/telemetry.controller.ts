@@ -1,46 +1,51 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
+import { AuthGuard } from './auth.guard';
+import { RequestWithAuth } from './auth.types';
 import { TelemetryService } from './telemetry.service';
 
 @Controller('api')
+@UseGuards(AuthGuard)
 export class TelemetryController {
   constructor(private readonly telemetry: TelemetryService) {}
 
   @Get('dashboard')
-  dashboard() {
-    return this.telemetry.dashboard();
+  dashboard(@Req() request: RequestWithAuth) {
+    return this.telemetry.dashboard(request.auth!.schemaName);
   }
 
   @Get('vehicles')
   vehicles(
+    @Req() request: RequestWithAuth,
     @Query('search') search?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.telemetry.vehicles({ search, limit: toInt(limit, 200) });
+    return this.telemetry.vehicles(request.auth!.schemaName, { search, limit: toInt(limit, 200) });
   }
 
   @Get('vehicles/:plate')
-  vehicle(@Param('plate') plate: string) {
-    return this.telemetry.vehicle(plate);
+  vehicle(@Req() request: RequestWithAuth, @Param('plate') plate: string) {
+    return this.telemetry.vehicle(request.auth!.schemaName, plate);
   }
 
   @Get('vehicles/:plate/timeline')
-  vehicleTimeline(@Param('plate') plate: string, @Query('limit') limit?: string) {
-    return this.telemetry.vehicleTimeline(plate, toInt(limit, 50));
+  vehicleTimeline(@Req() request: RequestWithAuth, @Param('plate') plate: string, @Query('limit') limit?: string) {
+    return this.telemetry.vehicleTimeline(request.auth!.schemaName, plate, toInt(limit, 50));
   }
 
   @Get('vehicles/:plate/positions')
-  vehiclePositions(@Param('plate') plate: string, @Query('hours') hours?: string) {
-    return this.telemetry.vehiclePositions(plate, toInt(hours, 24));
+  vehiclePositions(@Req() request: RequestWithAuth, @Param('plate') plate: string, @Query('hours') hours?: string) {
+    return this.telemetry.vehiclePositions(request.auth!.schemaName, plate, toInt(hours, 24));
   }
 
   @Get('alerts')
   alerts(
+    @Req() request: RequestWithAuth,
     @Query('period') period?: string,
     @Query('severity') severity?: string,
     @Query('search') search?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.telemetry.alerts({
+    return this.telemetry.alerts(request.auth!.schemaName, {
       period,
       severity,
       search,
@@ -49,13 +54,13 @@ export class TelemetryController {
   }
 
   @Get('reports/summary')
-  reportsSummary() {
-    return this.telemetry.reportsSummary();
+  reportsSummary(@Req() request: RequestWithAuth) {
+    return this.telemetry.reportsSummary(request.auth!.schemaName);
   }
 
   @Get('integration')
-  integration() {
-    return this.telemetry.integration();
+  integration(@Req() request: RequestWithAuth) {
+    return this.telemetry.integration(request.auth!.schemaName);
   }
 }
 

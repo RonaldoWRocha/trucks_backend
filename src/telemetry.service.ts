@@ -18,13 +18,13 @@ type AlertFilter = {
 export class TelemetryService {
   constructor(private readonly db: DatabaseService) {}
 
-  async dashboard() {
+  async dashboard(schemaName: string) {
     const [vehicles, alerts, daily, topEvents, integration] = await Promise.all([
-      this.vehicleStats(),
-      this.alertStats(),
-      this.dailyActivity(),
-      this.topEventTypes(),
-      this.integration(),
+      this.vehicleStats(schemaName),
+      this.alertStats(schemaName),
+      this.dailyActivity(schemaName),
+      this.topEventTypes(schemaName),
+      this.integration(schemaName),
     ]);
 
     return {
@@ -37,7 +37,8 @@ export class TelemetryService {
     };
   }
 
-  async vehicles(filter: VehicleFilter) {
+  async vehicles(schemaName: string, filter: VehicleFilter) {
+    const schema = quoteIdent(schemaName);
     const params: unknown[] = [];
     const where: string[] = [];
 
@@ -61,14 +62,14 @@ export class TelemetryService {
         select distinct on (veiculo_id)
           veiculo_id, data_hora, latitude, longitude, municipio, uf, velocidade,
           rpm, odometro, evt4_ignicao_acionada
-        from trucks.mensagens_cb
+        from ${schema}.mensagens_cb
         order by veiculo_id, data_hora desc
       ),
       latest_report as (
         select distinct on (veiculo_id)
           veiculo_id, distancia, velocidade_media, velocidade_max, media_consumo,
           rpm_medio, hodometro_fim, total_motor_lig, total_motor_lig_par
-        from trucks.telemetria_relatorio
+        from ${schema}.telemetria_relatorio
         order by veiculo_id, data_referencia desc
       ),
       base as (
@@ -98,7 +99,7 @@ export class TelemetryService {
             when lm.data_hora < now() - interval '10 minutes' then 'sem-comm'
             else 'online'
           end as status
-        from trucks.veiculos v
+        from ${schema}.veiculos v
         left join latest_msg lm on lm.veiculo_id = v.veiculo_id
         left join latest_report lr on lr.veiculo_id = v.veiculo_id
       )
@@ -114,8 +115,8 @@ export class TelemetryService {
     return result.rows.map((row) => this.mapVehicle(row));
   }
 
-  async vehicle(plate: string) {
-    const rows = await this.vehicles({ search: plate, status: undefined, limit: 20 });
+  async vehicle(schemaName: string, plate: string) {
+    const rows = await this.vehicles(schemaName, { search: plate, status: undefined, limit: 20 });
     const vehicle = rows.find((item) => item.plate === plate || String(item.veiculoId) === plate);
     if (!vehicle) {
       throw new NotFoundException('Veiculo nao encontrado');
@@ -123,12 +124,13 @@ export class TelemetryService {
     return vehicle;
   }
 
-  async vehicleTimeline(plate: string, limit: number) {
+  async vehicleTimeline(schemaName: string, plate: string, limit: number) {
+    const schema = quoteIdent(schemaName);
     const result = await this.db.query(
       `
       with target as (
         select veiculo_id, placa
-        from trucks.veiculos
+        from ${schema}.veiculos
         where placa = $1 or veiculo_id::text = $1
         limit 1
       ),
@@ -145,7 +147,7 @@ export class TelemetryService {
           concat_ws(' - ', m.municipio, m.uf) as location,
           m.velocidade as speed,
           m.rpm
-        from trucks.mensagens_cb m
+        from ${schema}.mensagens_cb m
         join target t on t.veiculo_id = m.veiculo_id
         union all
         select
@@ -156,7 +158,7 @@ export class TelemetryService {
           '' as location,
           o.velocidade,
           o.rpm
-        from trucks.ocorrencias_telemetria o
+        from ${schema}.ocorrencias_telemetria o
         join target t on t.veiculo_id = o.veiculo_id
       )
       select *
@@ -170,12 +172,13 @@ export class TelemetryService {
     return result.rows.map((row) => this.mapEvent(row));
   }
 
-  async vehiclePositions(plate: string, hours: number) {
+  async vehiclePositions(schemaName: string, plate: string, hours: number) {
+    const schema = quoteIdent(schemaName);
     const result = await this.db.query(
       `
       with target as (
         select veiculo_id
-        from trucks.veiculos
+        from ${schema}.veiculos
         where placa = $1 or veiculo_id::text = $1
         limit 1
       )
@@ -187,7 +190,7 @@ export class TelemetryService {
         m.velocidade,
         m.municipio,
         m.uf
-      from trucks.mensagens_cb m
+      from ${schema}.mensagens_cb m
       join target t on t.veiculo_id = m.veiculo_id
       where m.latitude is not null
         and m.longitude is not null
@@ -209,7 +212,8 @@ export class TelemetryService {
     }));
   }
 
-  async alerts(filter: AlertFilter) {
+  async alerts(schemaName: string, filter: AlertFilter) {
+    const schema = quoteIdent(schemaName);
     const params: unknown[] = [];
     const where: string[] = [];
     const period = periodToInterval(filter.period);
@@ -260,8 +264,8 @@ export class TelemetryService {
           concat_ws(' - ', m.municipio, m.uf) as location,
           m.velocidade as speed,
           m.rpm
-        from trucks.mensagens_cb m
-        left join trucks.veiculos v on v.veiculo_id = m.veiculo_id
+        from ${schema}.mensagens_cb m
+        left join ${schema}.veiculos v on v.veiculo_id = m.veiculo_id
         where m.evt2_sirene_acionada
            or m.evt3_veiculo_bloqueado
            or m.evt12_porta_carona_aberta
@@ -281,8 +285,8 @@ export class TelemetryService {
           '' as location,
           o.velocidade as speed,
           o.rpm
-        from trucks.ocorrencias_telemetria o
-        left join trucks.veiculos v on v.veiculo_id = o.veiculo_id
+        from ${schema}.ocorrencias_telemetria o
+        left join ${schema}.veiculos v on v.veiculo_id = o.veiculo_id
       ),
       labeled as (
         select *
@@ -300,7 +304,8 @@ export class TelemetryService {
     return result.rows.map((row) => this.mapEvent(row));
   }
 
-  async reportsSummary() {
+  async reportsSummary(schemaName: string) {
+    const schema = quoteIdent(schemaName);
     const result = await this.db.query(
       `
       select
@@ -309,14 +314,15 @@ export class TelemetryService {
         coalesce(avg(velocidade_media), 0)::numeric as avg_speed,
         coalesce(avg(media_consumo), 0)::numeric as avg_fuel,
         coalesce(sum(extract(epoch from total_motor_lig_par) / 3600), 0)::numeric as total_idle_h
-      from trucks.telemetria_relatorio
+      from ${schema}.telemetria_relatorio
       where data_referencia >= current_date - interval '7 days'
       `,
     );
     return camelize(result.rows[0] ?? {});
   }
 
-  async integration() {
+  async integration(schemaName: string) {
+    const schema = quoteIdent(schemaName);
     const [jobs, errors, queue] = await Promise.all([
       this.db.query(
         `
@@ -332,27 +338,27 @@ export class TelemetryService {
           last_records_inserted,
           last_records_ignored,
           next_run_at
-        from trucks.integration_jobs
+        from ${schema}.integration_jobs
         order by job_name
         `,
       ),
       this.db.query(
         `
         select id, job_name, stage, error_message, occurred_at
-        from trucks.integration_errors
+        from ${schema}.integration_errors
         order by occurred_at desc
         limit 50
         `,
       ),
       this.db.query(
         `
-        select 'veiculos' as job, status, count(*)::int as count from trucks.veiculos_temp group by status
+        select 'veiculos' as job, status, count(*)::int as count from ${schema}.veiculos_temp group by status
         union all
-        select 'mensagens_cb' as job, status, count(*)::int as count from trucks.mensagens_cb_temp group by status
+        select 'mensagens_cb' as job, status, count(*)::int as count from ${schema}.mensagens_cb_temp group by status
         union all
-        select 'ocorrencias_telemetria' as job, status, count(*)::int as count from trucks.ocorrencias_telemetria_temp group by status
+        select 'ocorrencias_telemetria' as job, status, count(*)::int as count from ${schema}.ocorrencias_telemetria_temp group by status
         union all
-        select 'telemetria_relatorio' as job, status, count(*)::int as count from trucks.telemetria_relatorio_temp group by status
+        select 'telemetria_relatorio' as job, status, count(*)::int as count from ${schema}.telemetria_relatorio_temp group by status
         `,
       ),
     ]);
@@ -376,12 +382,13 @@ export class TelemetryService {
     };
   }
 
-  private async vehicleStats() {
+  private async vehicleStats(schemaName: string) {
+    const schema = quoteIdent(schemaName);
     const result = await this.db.query(
       `
       with latest as (
         select distinct on (veiculo_id) veiculo_id, data_hora
-        from trucks.mensagens_cb
+        from ${schema}.mensagens_cb
         order by veiculo_id, data_hora desc
       )
       select
@@ -389,14 +396,15 @@ export class TelemetryService {
         count(*) filter (where l.data_hora >= now() - interval '10 minutes')::int as online,
         count(*) filter (where l.data_hora < now() - interval '10 minutes' and l.data_hora >= now() - interval '90 minutes')::int as atrasado,
         count(*) filter (where l.data_hora is null or l.data_hora < now() - interval '90 minutes')::int as sem_comm
-      from trucks.veiculos v
+      from ${schema}.veiculos v
       left join latest l on l.veiculo_id = v.veiculo_id
       `,
     );
     return camelize(result.rows[0] ?? {});
   }
 
-  private async alertStats() {
+  private async alertStats(schemaName: string) {
+    const schema = quoteIdent(schemaName);
     const result = await this.db.query(
       `
       select
@@ -404,21 +412,22 @@ export class TelemetryService {
         count(*) filter (
           where evt2_sirene_acionada or evt3_veiculo_bloqueado or evt27_desengate_carreta2
         )::int as critical_24h
-      from trucks.mensagens_cb
+      from ${schema}.mensagens_cb
       where data_hora >= now() - interval '24 hours'
       `,
     );
     return camelize(result.rows[0] ?? {});
   }
 
-  private async dailyActivity() {
+  private async dailyActivity(schemaName: string) {
+    const schema = quoteIdent(schemaName);
     const result = await this.db.query(
       `
       select
         to_char(data_referencia, 'Dy') as day,
         coalesce(sum(distancia), 0)::numeric as km,
         coalesce(avg(media_consumo), 0)::numeric as fuel
-      from trucks.telemetria_relatorio
+      from ${schema}.telemetria_relatorio
       where data_referencia >= current_date - interval '7 days'
       group by data_referencia
       order by data_referencia
@@ -427,7 +436,8 @@ export class TelemetryService {
     return result.rows.map(camelize);
   }
 
-  private async topEventTypes() {
+  private async topEventTypes(schemaName: string) {
+    const schema = quoteIdent(schemaName);
     const result = await this.db.query(
       `
       select label, count(*)::int as count, severity as sev
@@ -451,7 +461,7 @@ export class TelemetryService {
             when m.velocidade >= 100 or m.rpm >= 2400 then 'warn'
             else 'info'
           end as severity
-        from trucks.mensagens_cb m
+        from ${schema}.mensagens_cb m
         where m.data_hora >= now() - interval '24 hours'
           and (
             m.evt2_sirene_acionada
@@ -544,4 +554,11 @@ function camelize(row: Record<string, unknown>) {
       value,
     ]),
   );
+}
+
+function quoteIdent(value: string) {
+  if (!/^[a-z][a-z0-9_]*$/.test(value)) {
+    throw new Error('Schema invalido');
+  }
+  return `"${value}"`;
 }
