@@ -60,7 +60,7 @@ export class TelemetryService {
       with latest_msg as (
         select distinct on (veiculo_id)
           veiculo_id, data_hora, latitude, longitude, municipio, uf, velocidade,
-          rpm, odometro
+          rpm, odometro, evt4_ignicao_acionada
         from trucks.mensagens_cb
         order by veiculo_id, data_hora desc
       ),
@@ -85,6 +85,7 @@ export class TelemetryService {
           lm.uf,
           coalesce(lm.velocidade, 0) as speed,
           coalesce(lm.rpm, lr.rpm_medio, 0) as rpm,
+          coalesce(lm.evt4_ignicao_acionada, false) as ignition,
           coalesce(lm.odometro, lr.hodometro_fim, 0) as odometer,
           coalesce(lr.distancia, 0) as distance_7d,
           coalesce(lr.velocidade_media, 0) as avg_speed,
@@ -487,6 +488,7 @@ export class TelemetryService {
       uf: row.uf,
       speed: toNumber(row.speed),
       rpm: toNumber(row.rpm),
+      ignition: Boolean(row.ignition),
       odometer: toNumber(row.odometer),
       distance7d: toNumber(row.distance_7d),
       avgSpeed: toNumber(row.avg_speed),
