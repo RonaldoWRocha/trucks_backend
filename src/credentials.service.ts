@@ -82,7 +82,7 @@ export class CredentialsService {
             login = $3,
             password_encrypted = case
               when $4 = '' then password_encrypted
-              else encode(pgp_sym_encrypt($4, $5), 'base64')
+              else armor(pgp_sym_encrypt($4, $5))
             end,
             enabled = true,
             updated_by = $6,
@@ -97,7 +97,7 @@ export class CredentialsService {
         insert into public.integration_credentials (
           client_id, provider, api_url, login, password_encrypted, enabled, created_by, updated_by
         )
-        values ($1, 'trucks', $2, $3, encode(pgp_sym_encrypt($4, $5), 'base64'), true, $6, $6)
+        values ($1, 'trucks', $2, $3, armor(pgp_sym_encrypt($4, $5)), true, $6, $6)
         `,
         [auth.clientId, apiUrl, login, password, key, auth.userId],
       );
