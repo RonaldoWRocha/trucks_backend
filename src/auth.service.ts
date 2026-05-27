@@ -172,14 +172,15 @@ export class AuthService {
         c.id as client_id,
         c.name as client_name,
         c.schema_name,
-        uc.role
+        coalesce(uc.role, case when u.is_platform_admin then 'platform_admin' else null end) as role
       from public.app_sessions s
       join public.app_users u on u.id = s.user_id and u.enabled = true
       join public.clients c on c.id = s.active_client_id and c.enabled = true
-      join public.user_clients uc on uc.user_id = u.id and uc.client_id = c.id and uc.enabled = true
+      left join public.user_clients uc on uc.user_id = u.id and uc.client_id = c.id and uc.enabled = true
       where s.token_hash = $1
         and s.revoked_at is null
         and s.expires_at > now()
+        and (u.is_platform_admin = true or uc.user_id is not null)
       limit 1
       `,
       [hashToken(token)],
