@@ -32,6 +32,13 @@ export class UsersController {
     });
   }
 
+  @Patch(':id/password')
+  updatePassword(@Req() request: RequestWithAuth, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.users.updatePassword(request.auth!, Number(id), {
+      password: String(body.password || ''),
+    });
+  }
+
   @Delete(':id')
   delete(@Req() request: RequestWithAuth, @Param('id') id: string) {
     return this.users.delete(request.auth!, Number(id));

@@ -16,6 +16,10 @@ type UpdateUserInput = {
   role?: string;
 };
 
+type UpdatePasswordInput = {
+  password?: string;
+};
+
 @Injectable()
 export class UsersService {
   constructor(private readonly db: DatabaseService) {}
@@ -156,6 +160,47 @@ export class UsersService {
       `,
       [userId, clientId, role],
     );
+
+    return { ok: true };
+  }
+
+  async updatePassword(auth: AuthContext, userId: number, input: UpdatePasswordInput) {
+    this.requirePlatformAdmin(auth);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      throw new BadRequestException('Usuario invalido');
+    }
+
+    const password = String(input.password || '');
+    if (password.length < 6) {
+      throw new BadRequestException('A senha deve ter pelo menos 6 caracteres');
+    }
+
+    const user = await this.db.query('select 1 from public.app_users where id = $1 and enabled = true', [userId]);
+    if (!user.rows[0]) {
+      throw new BadRequestException('Usuario invalido');
+    }
+
+    await this.db.query(
+      `
+      update public.app_users
+      set password_hash = $2,
+          updated_at = now()
+      where id = $1
+      `,
+      [userId, hashPassword(password)],
+    );
+
+    if (userId !== auth.userId) {
+      await this.db.query(
+        `
+        update public.app_sessions
+        set revoked_at = coalesce(revoked_at, now()),
+            updated_at = now()
+        where user_id = $1
+        `,
+        [userId],
+      );
+    }
 
     return { ok: true };
   }
