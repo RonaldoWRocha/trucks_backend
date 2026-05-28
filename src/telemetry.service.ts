@@ -358,7 +358,7 @@ export class TelemetryService {
     const result = await this.db.query(
       `
       select
-        count(*)::int as vehicles,
+        count(distinct veiculo_id)::int as vehicles,
         coalesce(sum(distancia), 0)::numeric as total_distance,
         coalesce(avg(velocidade_media), 0)::numeric as avg_speed,
         coalesce(avg(media_consumo), 0)::numeric as avg_fuel,
@@ -502,6 +502,7 @@ export class TelemetryService {
     const result = await this.db.query(
       `
       select
+        data_referencia::text as date,
         to_char(data_referencia, 'Dy') as day,
         coalesce(sum(distancia), 0)::numeric as km,
         coalesce(avg(media_consumo), 0)::numeric as fuel
