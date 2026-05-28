@@ -11,6 +11,8 @@ const INTEGRATION_JOBS = [
   { jobName: 'ocorrencias_telemetria', requestType: 'RequestTelemetriaOcorrencias', intervalSeconds: 86400 },
 ];
 
+const CLONE_DATA_TABLES = new Set(['integration_jobs']);
+
 type CreateClientInput = {
   clientName?: string;
   slug?: string;
@@ -117,6 +119,8 @@ export class ClientsService {
     );
 
     for (const row of tables.rows) {
+      if (!CLONE_DATA_TABLES.has(row.table_name)) continue;
+
       const table = quoteIdent(row.table_name);
       const columns = await this.db.query<{ column_name: string }>(
         `
