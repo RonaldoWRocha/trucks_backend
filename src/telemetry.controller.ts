@@ -49,7 +49,7 @@ export class TelemetryController {
       period,
       severity,
       search,
-      limit: toInt(limit, 200),
+      limit: toInt(limit, 200, 5000),
     });
   }
 
@@ -64,7 +64,7 @@ export class TelemetryController {
   }
 }
 
-function toInt(value: string | undefined, fallback: number) {
+function toInt(value: string | undefined, fallback: number, max = 1000) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 1000) : fallback;
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback;
 }

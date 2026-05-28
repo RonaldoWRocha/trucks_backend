@@ -66,11 +66,56 @@ export class TelemetryService {
         order by veiculo_id, data_hora desc
       ),
       latest_report as (
-        select distinct on (veiculo_id)
-          veiculo_id, distancia, velocidade_media, velocidade_max, media_consumo,
-          rpm_medio, hodometro_fim, total_motor_lig, total_motor_lig_par
+        select
+          veiculo_id,
+          coalesce(sum(distancia), 0) as distancia,
+          coalesce(avg(velocidade_media), 0) as velocidade_media,
+          coalesce(max(velocidade_max), 0) as velocidade_max,
+          coalesce(avg(media_consumo), 0) as media_consumo,
+          coalesce(avg(rpm_medio), 0) as rpm_medio,
+          max(hodometro_fim) as hodometro_fim,
+          coalesce(sum(extract(epoch from total_motor_lig)) * interval '1 second', interval '0 seconds') as total_motor_lig,
+          coalesce(sum(extract(epoch from total_motor_lig_par)) * interval '1 second', interval '0 seconds') as total_motor_lig_par
         from ${schema}.telemetria_relatorio
-        order by veiculo_id, data_referencia desc
+        where data_referencia >= current_date - interval '6 days'
+          and data_referencia < current_date + interval '1 day'
+        group by veiculo_id
+      ),
+      alert_counts as (
+        select veiculo_id, count(*)::int as alerts_7d
+        from (
+          with ordered as (
+            select
+              veiculo_id,
+              data_hora,
+              coalesce(evt2_sirene_acionada, false) as evt2,
+              coalesce(evt3_veiculo_bloqueado, false) as evt3,
+              coalesce(evt12_porta_carona_aberta, false) as evt12,
+              coalesce(evt13_porta_motorista_aberta, false) as evt13,
+              coalesce(evt27_desengate_carreta2, false) as evt27,
+              coalesce(velocidade, 0) as velocidade,
+              coalesce(rpm, 0) as rpm,
+              lag(coalesce(evt2_sirene_acionada, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt2,
+              lag(coalesce(evt3_veiculo_bloqueado, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt3,
+              lag(coalesce(evt12_porta_carona_aberta, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt12,
+              lag(coalesce(evt13_porta_motorista_aberta, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt13,
+              lag(coalesce(evt27_desengate_carreta2, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt27,
+              lag(coalesce(velocidade, 0), 1, 0) over (partition by veiculo_id order by data_hora) as prev_velocidade,
+              lag(coalesce(rpm, 0), 1, 0) over (partition by veiculo_id order by data_hora) as prev_rpm,
+              nullif(alerta_telemetria, '') as alerta_telemetria
+            from ${schema}.mensagens_cb
+            where data_hora >= now() - interval '7 days' - interval '1 hour'
+          )
+          select veiculo_id from ordered where data_hora >= now() - interval '7 days' and evt2 and not prev_evt2
+          union all select veiculo_id from ordered where data_hora >= now() - interval '7 days' and evt3 and not prev_evt3
+          union all select veiculo_id from ordered where data_hora >= now() - interval '7 days' and evt27 and not prev_evt27
+          union all select veiculo_id from ordered where data_hora >= now() - interval '7 days' and evt12 and not prev_evt12
+          union all select veiculo_id from ordered where data_hora >= now() - interval '7 days' and evt13 and not prev_evt13
+          union all select veiculo_id from ordered where data_hora >= now() - interval '7 days' and velocidade >= 90 and prev_velocidade < 90
+          union all select veiculo_id from ordered where data_hora >= now() - interval '7 days' and rpm >= 2200 and prev_rpm < 2200
+          union all select veiculo_id from ordered where data_hora >= now() - interval '7 days' and alerta_telemetria is not null
+        ) e
+        group by veiculo_id
       ),
       base as (
         select
@@ -94,6 +139,7 @@ export class TelemetryService {
           coalesce(lr.media_consumo, 0) as fuel,
           coalesce(extract(epoch from lr.total_motor_lig) / 3600, 0) as motor_on_h,
           coalesce(extract(epoch from lr.total_motor_lig_par) / 3600, 0) as idle_h,
+          coalesce(ac.alerts_7d, 0) as alerts_7d,
           case
             when lm.data_hora is null then 'sem-comm'
             when lm.data_hora < now() - interval '10 minutes' then 'sem-comm'
@@ -102,6 +148,7 @@ export class TelemetryService {
         from ${schema}.veiculos v
         left join latest_msg lm on lm.veiculo_id = v.veiculo_id
         left join latest_report lr on lr.veiculo_id = v.veiculo_id
+        left join alert_counts ac on ac.veiculo_id = v.veiculo_id
       )
       select *
       from base v
@@ -315,7 +362,8 @@ export class TelemetryService {
         coalesce(avg(media_consumo), 0)::numeric as avg_fuel,
         coalesce(sum(extract(epoch from total_motor_lig_par) / 3600), 0)::numeric as total_idle_h
       from ${schema}.telemetria_relatorio
-      where data_referencia >= current_date - interval '7 days'
+      where data_referencia >= current_date - interval '6 days'
+        and data_referencia < current_date + interval '1 day'
       `,
     );
     return camelize(result.rows[0] ?? {});
@@ -456,7 +504,8 @@ export class TelemetryService {
         coalesce(sum(distancia), 0)::numeric as km,
         coalesce(avg(media_consumo), 0)::numeric as fuel
       from ${schema}.telemetria_relatorio
-      where data_referencia >= current_date - interval '7 days'
+      where data_referencia >= current_date - interval '6 days'
+        and data_referencia < current_date + interval '1 day'
       group by data_referencia
       order by data_referencia
       `,
@@ -527,6 +576,7 @@ export class TelemetryService {
       ignition: Boolean(row.ignition),
       odometer: toNumber(row.odometer),
       distance7d: toNumber(row.distance_7d),
+      alerts7d: toNumber(row.alerts_7d),
       avgSpeed: toNumber(row.avg_speed),
       maxSpeed: toNumber(row.max_speed),
       fuel: toNumber(row.fuel),
