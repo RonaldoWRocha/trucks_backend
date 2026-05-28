@@ -408,7 +408,16 @@ export class TelemetryService {
     const result = await this.db.query(
       `
       select
-        count(*)::int as total_24h,
+        count(*) filter (
+          where evt2_sirene_acionada
+             or evt3_veiculo_bloqueado
+             or evt12_porta_carona_aberta
+             or evt13_porta_motorista_aberta
+             or evt27_desengate_carreta2
+             or velocidade >= 90
+             or rpm >= 2200
+             or nullif(alerta_telemetria, '') is not null
+        )::int as total_24h,
         count(*) filter (
           where evt2_sirene_acionada or evt3_veiculo_bloqueado or evt27_desengate_carreta2
         )::int as critical_24h
