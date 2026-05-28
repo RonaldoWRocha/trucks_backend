@@ -11,6 +11,11 @@ type CreateUserInput = {
   role?: string;
 };
 
+type UpdateUserInput = {
+  clientId?: number;
+  role?: string;
+};
+
 @Injectable()
 export class UsersService {
   constructor(private readonly db: DatabaseService) {}
@@ -91,6 +96,107 @@ export class UsersService {
     );
 
     return { ok: true, userId: user.rows[0].id };
+  }
+
+  async updateRole(auth: AuthContext, userId: number, input: UpdateUserInput) {
+    this.requirePlatformAdmin(auth);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      throw new BadRequestException('Usuario invalido');
+    }
+
+    const role = normalizeRole(input.role || 'viewer');
+    const clientId = Number(input.clientId);
+    const isPlatformAdmin = role === 'platform_admin';
+
+    const user = await this.db.query('select 1 from public.app_users where id = $1 and enabled = true', [userId]);
+    if (!user.rows[0]) {
+      throw new BadRequestException('Usuario invalido');
+    }
+
+    if (isPlatformAdmin) {
+      await this.db.query(
+        `
+        update public.app_users
+        set is_platform_admin = true,
+            updated_at = now()
+        where id = $1
+        `,
+        [userId],
+      );
+      return { ok: true };
+    }
+
+    if (!Number.isFinite(clientId)) {
+      throw new BadRequestException('Cliente e obrigatorio para perfil de ambiente');
+    }
+
+    const client = await this.db.query('select 1 from public.clients where id = $1 and enabled = true', [clientId]);
+    if (!client.rows[0]) {
+      throw new BadRequestException('Cliente invalido');
+    }
+
+    await this.db.query(
+      `
+      update public.app_users
+      set is_platform_admin = false,
+          updated_at = now()
+      where id = $1
+      `,
+      [userId],
+    );
+
+    await this.db.query(
+      `
+      insert into public.user_clients (user_id, client_id, role)
+      values ($1, $2, $3)
+      on conflict (user_id, client_id) do update set
+        role = excluded.role,
+        enabled = true,
+        updated_at = now()
+      `,
+      [userId, clientId, role],
+    );
+
+    return { ok: true };
+  }
+
+  async delete(auth: AuthContext, userId: number) {
+    this.requirePlatformAdmin(auth);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      throw new BadRequestException('Usuario invalido');
+    }
+    if (userId === auth.userId) {
+      throw new BadRequestException('Voce nao pode excluir seu proprio usuario');
+    }
+
+    await this.db.query(
+      `
+      update public.app_users
+      set enabled = false,
+          updated_at = now()
+      where id = $1
+      `,
+      [userId],
+    );
+    await this.db.query(
+      `
+      update public.user_clients
+      set enabled = false,
+          updated_at = now()
+      where user_id = $1
+      `,
+      [userId],
+    );
+    await this.db.query(
+      `
+      update public.app_sessions
+      set revoked_at = coalesce(revoked_at, now()),
+          updated_at = now()
+      where user_id = $1
+      `,
+      [userId],
+    );
+    return { ok: true };
   }
 
   private requirePlatformAdmin(auth: AuthContext) {

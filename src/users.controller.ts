@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 import { RequestWithAuth } from './auth.types';
 import { UsersService } from './users.service';
@@ -22,5 +22,18 @@ export class UsersController {
       clientId: Number(body.clientId),
       role: String(body.role || 'viewer'),
     });
+  }
+
+  @Patch(':id/role')
+  updateRole(@Req() request: RequestWithAuth, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.users.updateRole(request.auth!, Number(id), {
+      clientId: Number(body.clientId),
+      role: String(body.role || 'viewer'),
+    });
+  }
+
+  @Delete(':id')
+  delete(@Req() request: RequestWithAuth, @Param('id') id: string) {
+    return this.users.delete(request.auth!, Number(id));
   }
 }
