@@ -407,22 +407,41 @@ export class TelemetryService {
     const schema = quoteIdent(schemaName);
     const result = await this.db.query(
       `
+      with ordered as (
+        select
+          data_hora,
+          coalesce(evt2_sirene_acionada, false) as evt2,
+          coalesce(evt3_veiculo_bloqueado, false) as evt3,
+          coalesce(evt12_porta_carona_aberta, false) as evt12,
+          coalesce(evt13_porta_motorista_aberta, false) as evt13,
+          coalesce(evt27_desengate_carreta2, false) as evt27,
+          coalesce(velocidade, 0) as velocidade,
+          coalesce(rpm, 0) as rpm,
+          lag(coalesce(evt2_sirene_acionada, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt2,
+          lag(coalesce(evt3_veiculo_bloqueado, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt3,
+          lag(coalesce(evt12_porta_carona_aberta, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt12,
+          lag(coalesce(evt13_porta_motorista_aberta, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt13,
+          lag(coalesce(evt27_desengate_carreta2, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt27,
+          lag(coalesce(velocidade, 0), 1, 0) over (partition by veiculo_id order by data_hora) as prev_velocidade,
+          lag(coalesce(rpm, 0), 1, 0) over (partition by veiculo_id order by data_hora) as prev_rpm,
+          nullif(alerta_telemetria, '') as alerta_telemetria
+        from ${schema}.mensagens_cb
+        where data_hora >= now() - interval '25 hours'
+      ),
+      events as (
+        select 'crit' as severity from ordered where data_hora >= now() - interval '24 hours' and evt2 and not prev_evt2
+        union all select 'crit' from ordered where data_hora >= now() - interval '24 hours' and evt3 and not prev_evt3
+        union all select 'crit' from ordered where data_hora >= now() - interval '24 hours' and evt27 and not prev_evt27
+        union all select 'info' from ordered where data_hora >= now() - interval '24 hours' and evt12 and not prev_evt12
+        union all select 'info' from ordered where data_hora >= now() - interval '24 hours' and evt13 and not prev_evt13
+        union all select 'warn' from ordered where data_hora >= now() - interval '24 hours' and velocidade >= 90 and prev_velocidade < 90
+        union all select 'warn' from ordered where data_hora >= now() - interval '24 hours' and rpm >= 2200 and prev_rpm < 2200
+        union all select 'info' from ordered where data_hora >= now() - interval '24 hours' and alerta_telemetria is not null
+      )
       select
-        count(*) filter (
-          where evt2_sirene_acionada
-             or evt3_veiculo_bloqueado
-             or evt12_porta_carona_aberta
-             or evt13_porta_motorista_aberta
-             or evt27_desengate_carreta2
-             or velocidade >= 90
-             or rpm >= 2200
-             or nullif(alerta_telemetria, '') is not null
-        )::int as total_24h,
-        count(*) filter (
-          where evt2_sirene_acionada or evt3_veiculo_bloqueado or evt27_desengate_carreta2
-        )::int as critical_24h
-      from ${schema}.mensagens_cb
-      where data_hora >= now() - interval '24 hours'
+        count(*)::int as total_24h,
+        count(*) filter (where severity = 'crit')::int as critical_24h
+      from events
       `,
     );
     return camelize(result.rows[0] ?? {});
@@ -451,37 +470,35 @@ export class TelemetryService {
       `
       select label, count(*)::int as count, severity as sev
       from (
-        select
-          coalesce(
-            nullif(m.alerta_telemetria, ''),
-            case
-              when m.evt2_sirene_acionada then 'Sirene acionada'
-              when m.evt3_veiculo_bloqueado then 'Veiculo bloqueado'
-              when m.evt27_desengate_carreta2 then 'Desengate de carreta'
-              when m.evt12_porta_carona_aberta then 'Porta carona aberta'
-              when m.evt13_porta_motorista_aberta then 'Porta motorista aberta'
-              when m.velocidade >= 90 then 'Excesso de velocidade'
-              when m.rpm >= 2200 then 'RPM elevado'
-              else 'Mensagem de bordo'
-            end
-          ) as label,
-          case
-            when m.evt2_sirene_acionada or m.evt3_veiculo_bloqueado or m.evt27_desengate_carreta2 then 'crit'
-            when m.velocidade >= 100 or m.rpm >= 2400 then 'warn'
-            else 'info'
-          end as severity
-        from ${schema}.mensagens_cb m
-        where m.data_hora >= now() - interval '24 hours'
-          and (
-            m.evt2_sirene_acionada
-            or m.evt3_veiculo_bloqueado
-            or m.evt12_porta_carona_aberta
-            or m.evt13_porta_motorista_aberta
-            or m.evt27_desengate_carreta2
-            or m.velocidade >= 90
-            or m.rpm >= 2200
-            or nullif(m.alerta_telemetria, '') is not null
-          )
+        with ordered as (
+          select
+            data_hora,
+            coalesce(evt2_sirene_acionada, false) as evt2,
+            coalesce(evt3_veiculo_bloqueado, false) as evt3,
+            coalesce(evt12_porta_carona_aberta, false) as evt12,
+            coalesce(evt13_porta_motorista_aberta, false) as evt13,
+            coalesce(evt27_desengate_carreta2, false) as evt27,
+            coalesce(velocidade, 0) as velocidade,
+            coalesce(rpm, 0) as rpm,
+            lag(coalesce(evt2_sirene_acionada, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt2,
+            lag(coalesce(evt3_veiculo_bloqueado, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt3,
+            lag(coalesce(evt12_porta_carona_aberta, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt12,
+            lag(coalesce(evt13_porta_motorista_aberta, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt13,
+            lag(coalesce(evt27_desengate_carreta2, false), 1, false) over (partition by veiculo_id order by data_hora) as prev_evt27,
+            lag(coalesce(velocidade, 0), 1, 0) over (partition by veiculo_id order by data_hora) as prev_velocidade,
+            lag(coalesce(rpm, 0), 1, 0) over (partition by veiculo_id order by data_hora) as prev_rpm,
+            nullif(alerta_telemetria, '') as alerta_telemetria
+          from ${schema}.mensagens_cb
+          where data_hora >= now() - interval '25 hours'
+        )
+        select 'Sirene acionada' as label, 'crit' as severity from ordered where data_hora >= now() - interval '24 hours' and evt2 and not prev_evt2
+        union all select 'Veiculo bloqueado', 'crit' from ordered where data_hora >= now() - interval '24 hours' and evt3 and not prev_evt3
+        union all select 'Desengate de carreta', 'crit' from ordered where data_hora >= now() - interval '24 hours' and evt27 and not prev_evt27
+        union all select 'Porta carona aberta', 'info' from ordered where data_hora >= now() - interval '24 hours' and evt12 and not prev_evt12
+        union all select 'Porta motorista aberta', 'info' from ordered where data_hora >= now() - interval '24 hours' and evt13 and not prev_evt13
+        union all select 'Excesso de velocidade', 'warn' from ordered where data_hora >= now() - interval '24 hours' and velocidade >= 90 and prev_velocidade < 90
+        union all select 'RPM elevado', 'warn' from ordered where data_hora >= now() - interval '24 hours' and rpm >= 2200 and prev_rpm < 2200
+        union all select alerta_telemetria, 'info' from ordered where data_hora >= now() - interval '24 hours' and alerta_telemetria is not null
       ) e
       group by label, severity
       order by count desc
