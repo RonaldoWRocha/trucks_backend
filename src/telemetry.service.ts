@@ -75,6 +75,7 @@ export class TelemetryService {
           coalesce(avg(rpm_medio), 0) as rpm_medio,
           max(hodometro_fim) as hodometro_fim,
           coalesce(sum(extract(epoch from total_motor_lig)) * interval '1 second', interval '0 seconds') as total_motor_lig,
+          coalesce(sum(extract(epoch from total_motor_deslig)) * interval '1 second', interval '0 seconds') as total_motor_deslig,
           coalesce(sum(extract(epoch from total_motor_lig_par)) * interval '1 second', interval '0 seconds') as total_motor_lig_par
         from ${schema}.telemetria_relatorio
         where data_referencia >= current_date - interval '6 days'
@@ -138,6 +139,7 @@ export class TelemetryService {
           coalesce(lr.velocidade_max, 0) as max_speed,
           coalesce(lr.media_consumo, 0) as fuel,
           coalesce(extract(epoch from lr.total_motor_lig) / 3600, 0) as motor_on_h,
+          coalesce(extract(epoch from lr.total_motor_deslig) / 3600, 0) as motor_off_h,
           coalesce(extract(epoch from lr.total_motor_lig_par) / 3600, 0) as idle_h,
           coalesce(ac.alerts_7d, 0) as alerts_7d,
           case
@@ -581,6 +583,7 @@ export class TelemetryService {
       maxSpeed: toNumber(row.max_speed),
       fuel: toNumber(row.fuel),
       motorOnH: toNumber(row.motor_on_h),
+      motorOffH: toNumber(row.motor_off_h),
       idleH: toNumber(row.idle_h),
       lastMessageAt,
       lastMessageMin: lastMessageAt
