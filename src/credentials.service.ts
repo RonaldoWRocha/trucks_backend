@@ -34,7 +34,9 @@ export class CredentialsService {
 
     const row = result.rows[0];
     return {
-      configured: Boolean(row?.enabled),
+      configured: Boolean(row),
+      enabled: Boolean(row?.enabled),
+      serviceEnabled: Boolean(row?.enabled),
       credential: row
         ? {
             id: row.id,
