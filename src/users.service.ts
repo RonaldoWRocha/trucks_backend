@@ -46,29 +46,37 @@ export class UsersService {
     const password = String(input.password || '');
     const role = normalizeRole(input.role || 'viewer');
     const clientId = Number(input.clientId);
+    const isPlatformAdmin = role === 'platform_admin';
 
-    if (!name || !password || !Number.isFinite(clientId)) {
+    if (!name || !password || (!isPlatformAdmin && !Number.isFinite(clientId))) {
       throw new BadRequestException('Nome, email, senha e cliente sao obrigatorios');
     }
 
-    const client = await this.db.query('select 1 from public.clients where id = $1 and enabled = true', [clientId]);
-    if (!client.rows[0]) {
-      throw new BadRequestException('Cliente invalido');
+    if (!isPlatformAdmin) {
+      const client = await this.db.query('select 1 from public.clients where id = $1 and enabled = true', [clientId]);
+      if (!client.rows[0]) {
+        throw new BadRequestException('Cliente invalido');
+      }
     }
 
     const user = await this.db.query<{ id: number }>(
       `
-      insert into public.app_users (name, email, password_hash)
-      values ($1, $2, $3)
+      insert into public.app_users (name, email, password_hash, is_platform_admin)
+      values ($1, $2, $3, $4)
       on conflict (email) do update set
         name = excluded.name,
         password_hash = excluded.password_hash,
+        is_platform_admin = excluded.is_platform_admin,
         enabled = true,
         updated_at = now()
       returning id
       `,
-      [name, email, hashPassword(password)],
+      [name, email, hashPassword(password), isPlatformAdmin],
     );
+
+    if (isPlatformAdmin) {
+      return { ok: true, userId: user.rows[0].id };
+    }
 
     await this.db.query(
       `
@@ -107,7 +115,7 @@ function normalizeEmail(email: string) {
 
 function normalizeRole(role: string) {
   const value = String(role || 'viewer');
-  if (!['owner', 'admin', 'operator', 'viewer'].includes(value)) {
+  if (!['platform_admin', 'owner', 'admin', 'operator', 'viewer'].includes(value)) {
     throw new BadRequestException('Perfil invalido');
   }
   return value;

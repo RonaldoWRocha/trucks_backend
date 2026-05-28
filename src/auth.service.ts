@@ -70,9 +70,10 @@ export class AuthService {
       email: string;
       password_hash: string;
       enabled: boolean;
+      is_platform_admin: boolean;
     }>(
       `
-      select id, name, email, password_hash, enabled
+      select id, name, email, password_hash, enabled, is_platform_admin
       from public.app_users
       where email = $1
       limit 1
@@ -86,14 +87,22 @@ export class AuthService {
     }
 
     const client = await this.db.query<{ client_id: number }>(
-      `
-      select client_id
-      from public.user_clients
-      where user_id = $1 and enabled = true
-      order by case role when 'owner' then 1 when 'admin' then 2 when 'operator' then 3 else 4 end
-      limit 1
-      `,
-      [row.id],
+      row.is_platform_admin
+        ? `
+          select id as client_id
+          from public.clients
+          where enabled = true
+          order by name
+          limit 1
+          `
+        : `
+          select client_id
+          from public.user_clients
+          where user_id = $1 and enabled = true
+          order by case role when 'owner' then 1 when 'admin' then 2 when 'operator' then 3 else 4 end
+          limit 1
+          `,
+      row.is_platform_admin ? [] : [row.id],
     );
 
     if (!client.rows[0]) {
