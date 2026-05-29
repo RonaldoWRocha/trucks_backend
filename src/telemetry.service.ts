@@ -820,10 +820,20 @@ function scoreTrip(input: {
   maxRpm: number;
   idleRatio: number;
 }) {
-  const greenBandScore = clampScore(100 - Math.abs(input.avgRpm - 1450) / 8 - Math.max(0, input.maxRpm - 1900) / 12);
-  const coastScore = clampScore(56 + input.avgFuel * 8 - Math.max(0, input.avgSpeed - 72) * 0.8);
-  const idleScore = clampScore(100 - input.idleRatio * 180);
-  const speedScore = clampScore(100 - Math.max(0, input.maxSpeed - 80) * 2 - Math.max(0, input.avgSpeed - 70));
+  const rpmDistancePenalty = Math.abs(input.avgRpm - 1450) / 8;
+  const rpmPeakPenalty = Math.max(0, input.maxRpm - 1900) / 12;
+  const greenBandScore = clampScore(100 - rpmDistancePenalty - rpmPeakPenalty);
+
+  const fuelBonus = input.avgFuel * 8;
+  const speedCoastPenalty = Math.max(0, input.avgSpeed - 72) * 0.8;
+  const coastScore = clampScore(56 + fuelBonus - speedCoastPenalty);
+
+  const idlePenalty = input.idleRatio * 180;
+  const idleScore = clampScore(100 - idlePenalty);
+
+  const maxSpeedPenalty = Math.max(0, input.maxSpeed - 80) * 2;
+  const avgSpeedPenalty = Math.max(0, input.avgSpeed - 70);
+  const speedScore = clampScore(100 - maxSpeedPenalty - avgSpeedPenalty);
   const score = Math.round(
     greenBandScore * 0.3 +
       coastScore * 0.25 +
@@ -837,6 +847,63 @@ function scoreTrip(input: {
     coastScore: Math.round(coastScore),
     idleScore: Math.round(idleScore),
     speedScore: Math.round(speedScore),
+    evidence: [
+      {
+        key: 'greenBand',
+        label: 'Faixa verde',
+        score: Math.round(greenBandScore),
+        measured: {
+          avgRpm: Math.round(input.avgRpm),
+          maxRpm: Math.round(input.maxRpm),
+        },
+        reference: 'RPM medio alvo 1450; RPM maximo ideal ate 1900',
+        reason:
+          rpmDistancePenalty + rpmPeakPenalty <= 0
+            ? 'RPM dentro da faixa esperada.'
+            : `Perdeu ${Math.round(rpmDistancePenalty + rpmPeakPenalty)} ponto(s) por desvio de RPM medio e/ou pico acima do ideal.`,
+      },
+      {
+        key: 'coast',
+        label: 'Aproveitamento de embalo',
+        score: Math.round(coastScore),
+        measured: {
+          avgFuel: Math.round(input.avgFuel * 100) / 100,
+          avgSpeed: Math.round(input.avgSpeed),
+        },
+        reference: 'Consumo maior melhora a nota; velocidade media acima de 72 km/h reduz embalo',
+        reason:
+          speedCoastPenalty <= 0
+            ? 'Consumo e velocidade media sustentam boa eficiencia.'
+            : `Perdeu ${Math.round(speedCoastPenalty)} ponto(s) por velocidade media alta para embalo eficiente.`,
+      },
+      {
+        key: 'idle',
+        label: 'Motor ligado parado',
+        score: Math.round(idleScore),
+        measured: {
+          idlePercent: Math.round(input.idleRatio * 100),
+        },
+        reference: 'Quanto menor o percentual de motor ligado parado, melhor',
+        reason:
+          idlePenalty <= 0
+            ? 'Sem tempo relevante de motor ligado parado.'
+            : `Perdeu ${Math.round(idlePenalty)} ponto(s): ${Math.round(input.idleRatio * 100)}% do tempo ligado ficou parado.`,
+      },
+      {
+        key: 'speed',
+        label: 'Velocidade',
+        score: Math.round(speedScore),
+        measured: {
+          avgSpeed: Math.round(input.avgSpeed),
+          maxSpeed: Math.round(input.maxSpeed),
+        },
+        reference: 'Velocidade maxima ideal ate 80 km/h; media ideal ate 70 km/h',
+        reason:
+          maxSpeedPenalty + avgSpeedPenalty <= 0
+            ? 'Velocidade dentro dos limites definidos.'
+            : `Perdeu ${Math.round(maxSpeedPenalty + avgSpeedPenalty)} ponto(s) por media e/ou pico de velocidade acima do limite.`,
+      },
+    ],
   };
 }
 
