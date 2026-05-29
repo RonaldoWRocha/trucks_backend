@@ -58,6 +58,28 @@ export class TelemetryController {
     return this.telemetry.reportsSummary(request.auth!.schemaName);
   }
 
+  @Get('gamification/drivers')
+  gamificationDrivers(
+    @Req() request: RequestWithAuth,
+    @Query('search') search?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.telemetry.gamificationDrivers(request.auth!.schemaName, {
+      search,
+      limit: toInt(limit, 200, 1000),
+    });
+  }
+
+  @Get('gamification/drivers/:driver/report')
+  driverGamificationReport(
+    @Req() request: RequestWithAuth,
+    @Param('driver') driver: string,
+    @Query('start') start?: string,
+    @Query('end') end?: string,
+  ) {
+    return this.telemetry.driverGamificationReport(request.auth!.schemaName, driver, { start, end });
+  }
+
   @Get('integration')
   integration(@Req() request: RequestWithAuth) {
     return this.telemetry.integration(request.auth!.schemaName);

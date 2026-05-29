@@ -15,6 +15,16 @@ type AlertFilter = {
   limit: number;
 };
 
+type GamificationDriverFilter = {
+  search?: string;
+  limit: number;
+};
+
+type GamificationPeriod = {
+  start?: string;
+  end?: string;
+};
+
 const FORCE_JOB_ROLES = new Set(['owner', 'admin', 'operator']);
 
 @Injectable()
@@ -374,6 +384,149 @@ export class TelemetryService {
     return camelize(result.rows[0] ?? {});
   }
 
+  async gamificationDrivers(schemaName: string, filter: GamificationDriverFilter) {
+    const schema = quoteIdent(schemaName);
+    const params: unknown[] = [];
+    const where: string[] = [`nullif(trim(coalesce(v.nome_motorista, '')), '') is not null`];
+
+    if (filter.search) {
+      params.push(`%${filter.search.toLowerCase()}%`);
+      where.push(`lower(v.nome_motorista) like $${params.length}`);
+    }
+
+    params.push(filter.limit);
+
+    const result = await this.db.query(
+      `
+      with recent as (
+        select
+          veiculo_id,
+          coalesce(sum(distancia), 0)::numeric as distance_30d,
+          coalesce(avg(media_consumo), 0)::numeric as fuel_30d,
+          max(data_referencia) as last_reference
+        from ${schema}.telemetria_relatorio
+        where data_referencia >= current_date - interval '30 days'
+          and data_referencia < current_date + interval '1 day'
+        group by veiculo_id
+      )
+      select
+        v.nome_motorista as name,
+        count(distinct v.veiculo_id)::int as vehicles,
+        string_agg(distinct v.placa, ', ' order by v.placa) as plates,
+        coalesce(sum(r.distance_30d), 0)::numeric as distance_30d,
+        coalesce(avg(nullif(r.fuel_30d, 0)), 0)::numeric as fuel_30d,
+        max(r.last_reference) as last_reference
+      from ${schema}.veiculos v
+      left join recent r on r.veiculo_id = v.veiculo_id
+      where ${where.join(' and ')}
+      group by v.nome_motorista
+      order by distance_30d desc, name
+      limit $${params.length}
+      `,
+      params,
+    );
+
+    return result.rows.map((row) => ({
+      name: row.name,
+      vehicles: Number(row.vehicles || 0),
+      plates: String(row.plates || ''),
+      distance30d: toNumber(row.distance_30d),
+      fuel30d: toNumber(row.fuel_30d),
+      lastReference: row.last_reference,
+    }));
+  }
+
+  async driverGamificationReport(schemaName: string, driver: string, period: GamificationPeriod) {
+    const start = dateParam(period.start, 'Data inicial invalida');
+    const end = dateParam(period.end, 'Data final invalida');
+    if (!start || !end) {
+      throw new BadRequestException('Informe data inicial e final');
+    }
+    if (start > end) {
+      throw new BadRequestException('Data inicial deve ser menor ou igual a data final');
+    }
+
+    const schema = quoteIdent(schemaName);
+    const result = await this.db.query(
+      `
+      select
+        r.data_referencia,
+        v.nome_motorista as driver,
+        v.placa,
+        coalesce(v.identificacao_equipamento, v.veiculo_id::text) as fleet,
+        coalesce(r.distancia, 0)::numeric as distance,
+        coalesce(r.velocidade_media, 0)::numeric as avg_speed,
+        coalesce(r.velocidade_max, 0)::numeric as max_speed,
+        coalesce(r.media_consumo, 0)::numeric as avg_fuel,
+        coalesce(r.rpm_medio, 0)::numeric as avg_rpm,
+        coalesce(r.rpm_max, 0)::numeric as max_rpm,
+        coalesce(extract(epoch from r.total_motor_lig) / 3600, 0)::numeric as motor_on_h,
+        coalesce(extract(epoch from r.total_motor_lig_par) / 3600, 0)::numeric as idle_h
+      from ${schema}.telemetria_relatorio r
+      join ${schema}.veiculos v on v.veiculo_id = r.veiculo_id
+      where lower(v.nome_motorista) = lower($1)
+        and r.data_referencia >= $2::date
+        and r.data_referencia <= $3::date
+      order by r.data_referencia, v.placa
+      `,
+      [driver, start, end],
+    );
+
+    const rows = result.rows.map((row) => {
+      const distance = Number(row.distance || 0);
+      const avgSpeed = Number(row.avg_speed || 0);
+      const maxSpeed = Number(row.max_speed || 0);
+      const avgFuel = Number(row.avg_fuel || 0);
+      const avgRpm = Number(row.avg_rpm || 0);
+      const maxRpm = Number(row.max_rpm || 0);
+      const motorOnH = Number(row.motor_on_h || 0);
+      const idleH = Number(row.idle_h || 0);
+      const idleRatio = motorOnH > 0 ? idleH / motorOnH : 0;
+      const scores = scoreTrip({ avgSpeed, maxSpeed, avgFuel, avgRpm, maxRpm, idleRatio });
+
+      return {
+        date: row.data_referencia,
+        startAt: `${formatDateOnly(row.data_referencia)} 00:00`,
+        endAt: `${formatDateOnly(row.data_referencia)} 23:59`,
+        driver: row.driver,
+        plate: row.placa,
+        fleet: row.fleet,
+        distance,
+        avgSpeed,
+        maxSpeed,
+        avgFuel,
+        avgRpm,
+        maxRpm,
+        motorOnH,
+        idleH,
+        idleRatio,
+        ...scores,
+      };
+    });
+
+    const totalDistance = rows.reduce((sum, row) => sum + row.distance, 0);
+    const avg = (key: keyof (typeof rows)[number]) =>
+      rows.length ? rows.reduce((sum, row) => sum + Number(row[key] || 0), 0) / rows.length : 0;
+
+    return {
+      driver,
+      start,
+      end,
+      totals: {
+        trips: rows.length,
+        distance: totalDistance,
+        avgFuel: avg('avgFuel'),
+        idleHours: rows.reduce((sum, row) => sum + row.idleH, 0),
+        score: Math.round(avg('score')),
+        greenBandScore: Math.round(avg('greenBandScore')),
+        coastScore: Math.round(avg('coastScore')),
+        idleScore: Math.round(avg('idleScore')),
+        speedScore: Math.round(avg('speedScore')),
+      },
+      rows,
+    };
+  }
+
   async integration(schemaName: string) {
     const schema = quoteIdent(schemaName);
     const [jobs, errors, queue] = await Promise.all([
@@ -657,6 +810,58 @@ function periodToInterval(period?: string) {
   if (period === '7d') return '7 days';
   if (period === '30d') return '30 days';
   return undefined;
+}
+
+function scoreTrip(input: {
+  avgSpeed: number;
+  maxSpeed: number;
+  avgFuel: number;
+  avgRpm: number;
+  maxRpm: number;
+  idleRatio: number;
+}) {
+  const greenBandScore = clampScore(100 - Math.abs(input.avgRpm - 1450) / 8 - Math.max(0, input.maxRpm - 1900) / 12);
+  const coastScore = clampScore(56 + input.avgFuel * 8 - Math.max(0, input.avgSpeed - 72) * 0.8);
+  const idleScore = clampScore(100 - input.idleRatio * 180);
+  const speedScore = clampScore(100 - Math.max(0, input.maxSpeed - 80) * 2 - Math.max(0, input.avgSpeed - 70));
+  const score = Math.round(
+    greenBandScore * 0.3 +
+      coastScore * 0.25 +
+      idleScore * 0.25 +
+      speedScore * 0.2,
+  );
+
+  return {
+    score,
+    greenBandScore: Math.round(greenBandScore),
+    coastScore: Math.round(coastScore),
+    idleScore: Math.round(idleScore),
+    speedScore: Math.round(speedScore),
+  };
+}
+
+function clampScore(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, value));
+}
+
+function dateParam(value: string | undefined, message: string) {
+  if (!value) return '';
+  const text = String(value).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    throw new BadRequestException(message);
+  }
+  return text;
+}
+
+function formatDateOnly(value: unknown) {
+  if (!value) return '';
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const year = date.getUTCFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 function toNumber(value: unknown) {
