@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 import { RequestWithAuth } from './auth.types';
 import { TelemetryService } from './telemetry.service';
@@ -61,6 +61,11 @@ export class TelemetryController {
   @Get('integration')
   integration(@Req() request: RequestWithAuth) {
     return this.telemetry.integration(request.auth!.schemaName);
+  }
+
+  @Post('integration/jobs/:jobId/force')
+  forceIntegrationJob(@Req() request: RequestWithAuth, @Param('jobId') jobId: string) {
+    return this.telemetry.forceIntegrationJob(request.auth!, jobId);
   }
 }
 

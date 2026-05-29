@@ -1,0 +1,45 @@
+
+> telemetria-api@0.1.0 start:dev
+> nest start --watch
+
+[2J[3J[H[[90m19:45:32[0m] Starting compilation in watch mode...
+
+[[90m19:45:33[0m] Found 0 errors. Watching for file changes.
+
+[dotenv@17.2.3] injecting env (10) from ..\telemetria_dados\.env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:34 [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[dotenv@17.2.3] injecting env (0) from ..\telemetria_dados\.env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:34 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +12ms[39m
+CORS origin configured: http://127.0.0.1:3000,http://localhost:3000
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mHealthController {/health}:[39m[38;5;3m +13ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/health, GET} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTelemetryController {/api}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/dashboard, GET} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate/timeline, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/vehicles/:plate/positions, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alerts, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/summary, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integration, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integration/jobs/:jobId/force, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/api/auth}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/bootstrap, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/setup, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/login, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/me, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/logout, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/auth/switch-client, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mCredentialsController {/api/integration/credentials}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integration/credentials, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/integration/credentials, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mClientsController {/api/clients}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/clients, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/clients, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mUsersController {/api/users}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id/role, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id/password, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/users/:id, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 28480  - [39m28/05/2026, 19:45:35 [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +2ms[39m

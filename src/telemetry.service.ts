@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { AuthContext } from './auth.types';
 import { DatabaseService } from './database.service';
 
 type VehicleFilter = {
@@ -13,6 +14,8 @@ type AlertFilter = {
   search?: string;
   limit: number;
 };
+
+const FORCE_JOB_ROLES = new Set(['owner', 'admin', 'operator']);
 
 @Injectable()
 export class TelemetryService {
@@ -430,6 +433,41 @@ export class TelemetryService {
       errors: errors.rows.map(camelize),
       queue: queue.rows.map(camelize),
     };
+  }
+
+  async forceIntegrationJob(auth: AuthContext, jobId: string) {
+    if (!auth.isPlatformAdmin && !FORCE_JOB_ROLES.has(auth.role)) {
+      throw new ForbiddenException('Usuario sem permissao para forcar jobs');
+    }
+
+    if (!/^[a-z][a-z0-9_]*$/.test(jobId)) {
+      throw new BadRequestException('Job invalido');
+    }
+
+    const schema = quoteIdent(auth.schemaName);
+    const result = await this.db.query(
+      `
+      update ${schema}.integration_jobs
+      set next_run_at = now(),
+          last_status = case when last_status = 'error' then last_status else 'queued' end,
+          updated_at = now()
+      where job_name = $1
+        and enabled = true
+      returning
+        job_name as id,
+        request_type,
+        interval_seconds,
+        next_run_at,
+        last_status
+      `,
+      [jobId],
+    );
+
+    if (!result.rowCount) {
+      throw new NotFoundException('Job nao encontrado ou desabilitado');
+    }
+
+    return camelize(result.rows[0]);
   }
 
   private async vehicleStats(schemaName: string) {
